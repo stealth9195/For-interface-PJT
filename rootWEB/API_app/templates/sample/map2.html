@@ -34,6 +34,54 @@
 	    // 지도를 생성합니다
 		var map = new kakao.maps.Map(mapContainer, mapOption);
 
+		// 지도 위에 마커 생성 함수--------------------------------------
+        function displayMarker(locPosition, message) {
+
+            // 마커를 생성합니다
+            var marker = new kakao.maps.Marker({
+                map: map,
+                position: locPosition
+            });
+
+            var iwContent = message, // 인포윈도우에 표시할 내용
+                iwRemoveable = true;
+
+            // 인포윈도우를 생성합니다
+            var infowindow = new kakao.maps.InfoWindow({
+                content : iwContent,
+                removable : iwRemoveable
+             });
+
+            // 인포윈도우를 마커위에 표시합니다
+            infowindow.open(map, marker);
+
+            // 지도 중심좌표를 접속위치로 변경합니다
+            map.setCenter(locPosition);
+        }
+        //-------------------------------------------------------
+
+		// 현재위치 표시하기
+      if (navigator.geolocation) {
+
+        navigator.geolocation.getCurrentPosition(function(position) {
+
+            var lat = position.coords.latitude,
+                lon = position.coords.longitude;
+
+            var locPosition = new kakao.maps.LatLng(lat, lon),
+                message = '<div style="padding:5px;">현재 위치</div>';
+
+            displayMarker(locPosition, message);
+        });
+      } else{
+
+        var locPosition = new kakao.maps.LatLng(33.450701, 126.570667),
+            message = 'geolocation을 사용할 수 없어요'
+
+        displayMarker(locPosition, message);
+      }
+
+	//----------------------------------------------------------
 
 	$('#searchBtn').click(function(){
 		// 버튼을 click했을때
