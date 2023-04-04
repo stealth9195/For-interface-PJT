@@ -17,7 +17,7 @@
 
 		</table>
 		<p></p>
-		<div id="map" style="width:100%;height:350px;"></div>
+		<div id="map" style="width:90%;height:450px;"></div>
 		<p></p>
 		<div id="result"></div>
 
@@ -37,6 +37,8 @@
 
 		// 마커 리스트
 		var markers = [];
+		// 인포윈도우 전역변수
+		var infowindow;
 
 		// 마커 클러스터링
 		var clusterer = new kakao.maps.MarkerClusterer({
@@ -55,6 +57,7 @@
     		}]
 		});
 
+
 		// 지도 위에 마커 생성 함수--------------------------------------
         function displayMarker(locPosition, message) {
 
@@ -67,17 +70,18 @@
 			// 생성된 마커를 클러스터에 추가
 			clusterer.addMarker(marker);
 
-<!--            var iwContent = message, // 인포윈도우에 표시할 내용-->
-<!--                iwRemoveable = true;-->
+            var iwContent = message, // 인포윈도우에 표시할 내용
+                iwRemoveable = true;
 
-<!--            // 인포윈도우를 생성합니다-->
-<!--            var infowindow = new kakao.maps.InfoWindow({-->
-<!--                content : iwContent,-->
-<!--                removable : iwRemoveable-->
-<!--             });-->
+            // 인포윈도우를 생성, 변수에 저장
+            infowindow = new kakao.maps.InfoWindow({
+                content : iwContent,
+                removable : iwRemoveable
+             });
 
-<!--            // 인포윈도우를 마커위에 표시합니다-->
-<!--            infowindow.open(map, marker);-->
+
+            // 인포윈도우를 마커위에 표시합니다
+            infowindow.open(map, marker);
 
 			let callback = function(result, status) {
 		                if (status === kakao.maps.services.Status.OK) {
@@ -86,8 +90,10 @@
 		                }
 		    }
 
-			const address = document.getElementById('address').value;
-  			document.getElementById("result").innerText = address;
+			// 지도 밑에 출력할 내용
+			// const address = document.getElementById('address').value;
+			// 현재 마커가 있는 곳의 경위도 좌표를 출력
+  			document.getElementById("result").innerText = locPosition;
 
             // 지도 중심좌표를 접속위치로 변경합니다
             map.setCenter(locPosition);
@@ -103,8 +109,8 @@
                 lon = position.coords.longitude;
 
             var locPosition = new kakao.maps.LatLng(lat, lon),
-                //message = '<div style="padding:15px;">현재 위치</div>';
-                message = '<div style="padding:15px;">'+locPosition+'</div>';
+                message = '<div style="padding:15px;">현재 위치</div>';
+                //message = '<div style="padding:15px;">'+locPosition+'</div>';
 
             displayMarker(locPosition, message);
         });
@@ -121,7 +127,9 @@
 
 	$('#searchBtn').click(function(){
 		// 버튼을 click했을때
+		// 마커 저장된 클러스터러 클리어
         clusterer.clear();
+        infowindow.close();
 
 
 		// 주소-좌표 변환 객체를 생성합니다
@@ -147,11 +155,17 @@
 		                if (status === kakao.maps.services.Status.OK) {
 		                	// 추출한 도로명 주소를 해당 input의 value값으로 적용
 		                    $('#address').val(result[0].road_address.address_name);
+		                    console.log($('#address').val())
+
+		                   // message = '<div style="padding:15px;">'+$('#address').val()+'</div>'
 		                }
 		            }
 		            geocoder.coord2Address(coord.getLng(), coord.getLat(), callback);
 		        }
-		        message = '<div style="padding:15px;">'+coords+'</div>'
+		        // message = '<div style="padding:15px;">'+lat+','+lng+'</div>'
+		        message = '<div style="padding:15px;">'+$('#address').val()+'</div>'
+
+
 
 
                 // 마커 생성 함수 사용
@@ -173,7 +187,8 @@
         });
     });
 
-    console.log(markers);
+
+
 
 	</script>
 </body>
