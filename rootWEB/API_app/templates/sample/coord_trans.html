@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!-- jquery 사용 -->
+<script src="http://code.jquery.com/jquery-latest.js"></script>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<pre>[현재 위치 및 장소 검색]</pre>
+<body>
+		<table>
+			<tr>
+				<td>주소</td>
+				<td><input type="text" name="detailAddress" id="address"></td>
+				<td><button type="button" id="searchBtn">Search</button></td>
+			</tr>
+
+		</table>
+		<p></p>
+		<div id="map" style="width:90%;height:450px;"></div>
+		<p></p>
+		<div id="result_coord"></div>
+
+	<!-- kakao API -->
+	<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=e443c812207cc3e160a9117574e67b76&libraries=services,clusterer"></script>
+
+
+	<script>
+		var mapContainer = document.getElementById('map'), // 지도를 표시할 div
+	    	mapOption = {
+	        	center: new kakao.maps.LatLng(33.450701, 126.570667), // 지도의 중심좌표
+	        	level: 5 // 지도의 확대 레벨
+	    	};
+
+		// 지도를 생성합니다
+		var map = new kakao.maps.Map(mapContainer, mapOption);
+
+		// 마커 리스트
+		var markers = [];
+		// 인포윈도우 전역변수
+		var infowindow;
+
+
+
+
+		// 마커 클러스터링
+		var clusterer = new kakao.maps.MarkerClusterer({
+	    	map: map,
+	    	markers: markers,
+    		gridSize: 35,
+    		averageCenter: true,
+    		minLevel: 6,
+    		disableClickZoom: true,
+    		styles: [{
+       			width : '53px', height : '52px',
+       			background: 'url(cluster.png) no-repeat',
+        		color: '#fff',
+        		textAlign: 'center',
+        		lineHeight: '54px'
+    		}]
+		});
+
+
+		// 지도 위에 마커 생성 함수--------------------------------------
+    	function displayMarker(locPosition, message) {
+
+        	// 마커를 생성합니다
+        	var marker = new kakao.maps.Marker({
+            	map: map,
+            	position: locPosition
+        	});
+
+			// 생성된 마커를 클러스터에 추가
+			clusterer.addMarker(marker);
+
+        	var iwContent = message, // 인포윈도우에 표시할 내용
+            	iwRemoveable = true;
+
+        	// 인포윈도우를 생성, 변수에 저장
+        	infowindow = new kakao.maps.InfoWindow({
+            	content : iwContent,
+            	removable : iwRemoveable
+        	});
+
+
+        	// 인포윈도우를 마커위에 표시합니다
+        	infowindow.open(map, marker);
+
+			let callback = function(result, status) {
+	        	        if (status === kakao.maps.services.Status.OK) {
+	            	    	// 추출한 도로명 주소를 해당 input의 value값으로 적용
+	                	    $('#address').val(result[0].road_address.address_name);
+	                	}
+	    	}
+
+			// 지도 밑에 출력할 내용
+			// const address = document.getElementById('address').value;
+			// 현재 마커가 있는 곳의 경위도 좌표를 출력
+  			document.getElementById("result_coord").innerText = locPosition;
+
+        	// 지도 중심좌표를 접속위치로 변경합니다
+        	map.setCenter(locPosition);
+    	}
+   		//-------------------------------------------------------
+
+    	// 경위도 좌표 -> 기상청 격자 좌표로 변환 함수
+    	// (사용 예)
+		// var rs = dfs_xy_conv("toLL","60","127");
+		// console.log(rs.lat, rs.lng);
+
+    	// LCC DFS 좌표변환을 위한 기초 자료
+    	var RE = 6371.00877; // 지구 반경(km)
+    	var GRID = 5.0; // 격자 간격(km)
+    	var SLAT1 = 30.0; // 투영 위도1(degree)
+    	var SLAT2 = 60.0; // 투영 위도2(degree)
+    	var OLON = 126.0; // 기준점 경도(degree)
+    	var OLAT = 38.0; // 기준점 위도(degree)
+    	var XO = 43; // 기준점 X좌표(GRID)
+    	var YO = 136; // 기1준점 Y좌표(GRID)
+    	//
+    	// LCC DFS 좌표변환 ( code : "toXY"(위경도->좌표, v1:위도, v2:경도), "toLL"(좌표->위경도,v1:x, v2:y) )
+    	//
+
+
+    	function dfs_xy_conv(code, v1, v2) {
+        	var DEGRAD = Math.PI / 180.0;
+        	var RADDEG = 180.0 / Math.PI;
+
+        	var re = RE / GRID;
+        	var slat1 = SLAT1 * DEGRAD;
+        	var slat2 = SLAT2 * DEGRAD;
+        	var olon = OLON * DEGRAD;
+        	var olat = OLAT * DEGRAD;
+
+        	var sn = Math.tan(Math.PI * 0.25 + slat2 * 0.5) / Math.tan(Math.PI * 0.25 + slat1 * 0.5);
+        	sn = Math.log(Math.cos(slat1) / Math.cos(slat2)) / Math.log(sn);
+        	var sf = Math.tan(Math.PI * 0.25 + slat1 * 0.5);
+        	sf = Math.pow(sf, sn) * Math.cos(slat1) / sn;
+        	var ro = Math.tan(Math.PI * 0.25 + olat * 0.5);
+        	ro = re * sf / Math.pow(ro, sn);
+        	var rs = {};
+        	if (code == "toXY") {
+	            rs['lat'] = v1;
+	            rs['lng'] = v2;
+	            var ra = Math.tan(Math.PI * 0.25 + (v1) * DEGRAD * 0.5);
+	            ra = re * sf / Math.pow(ra, sn);
+	            var theta = v2 * DEGRAD - olon;
+	            if (theta > Math.PI) theta -= 2.0 * Math.PI;
+	            if (theta < -Math.PI) theta += 2.0 * Math.PI;
+	            theta *= sn;
+	            rs['x'] = Math.floor(ra * Math.sin(theta) + XO + 0.5);
+    	        rs['y'] = Math.floor(ro - ra * Math.cos(theta) + YO + 0.5);
+        	}
+        	else {
+            	rs['x'] = v1;
+            	rs['y'] = v2;
+            	var xn = v1 - XO;
+            	var yn = ro - v2 + YO;
+            	ra = Math.sqrt(xn * xn + yn * yn);
+            	if (sn < 0.0) - ra;
+            	var alat = Math.pow((re * sf / ra), (1.0 / sn));
+            	alat = 2.0 * Math.atan(alat) - Math.PI * 0.5;
+
+            	if (Math.abs(xn) <= 0.0) {
+                	theta = 0.0;
+            	}
+            	else {
+                	if (Math.abs(yn) <= 0.0) {
+                    	theta = Math.PI * 0.5;
+                    	if (xn < 0.0) - theta;
+                	}
+                	else theta = Math.atan2(xn, yn);
+            	}
+            	var alon = theta / sn + olon;
+            	rs['lat'] = alat * RADDEG;
+            	rs['lng'] = alon * RADDEG;
+        	}
+        	return rs;
+    	}
+
+
+        //----------------------------------------------------------
+
+		// 현재위치 표시하기
+      if (navigator.geolocation) {
+
+        navigator.geolocation.getCurrentPosition(function(position) {
+
+            var lat = position.coords.latitude,
+                lon = position.coords.longitude;
+
+            var locPosition = new kakao.maps.LatLng(lat, lon),
+                message = '<div style="padding:15px;">현재 위치</div>';
+                //message = '<div style="padding:15px;">'+locPosition+'</div>';
+
+
+
+
+            displayMarker(locPosition, message);
+        });
+      } else{
+
+        var locPosition = new kakao.maps.LatLng(33.450701, 126.570667),
+            message = 'geolocation을 사용할 수 없어요'
+
+        displayMarker(locPosition, message);
+      }
+
+
+	//----------------------------------------------------------
+
+
+	$('#searchBtn').click(function(){
+		// 버튼을 click했을때
+		// 마커 저장된 클러스터러 클리어
+        clusterer.clear();
+        infowindow.close();
+
+
+		// 주소-좌표 변환 객체를 생성합니다
+		var geocoder = new kakao.maps.services.Geocoder();
+
+		// 주소로 좌표를 검색합니다
+		geocoder.addressSearch($('#address').val(), function(result, status) {
+
+		// 정상적으로 검색이 완료됐으면
+		if (status === kakao.maps.services.Status.OK) {
+		    var coords = new kakao.maps.LatLng(result[0].y, result[0].x);
+
+
+		        // 추출한 좌표를 통해 도로명 주소 추출
+		        let lat = result[0].y;
+		        let lng = result[0].x;
+		        getAddr(lat,lng);
+		        function getAddr(lat,lng){
+		            let geocoder = new kakao.maps.services.Geocoder();
+
+		            let coord = new kakao.maps.LatLng(lat, lng);
+		            let callback = function(result, status) {
+		                if (status === kakao.maps.services.Status.OK) {
+		                	// 추출한 도로명 주소를 해당 input의 value값으로 적용
+		                    $('#address').val(result[0].road_address.address_name);
+		                    console.log($('#address').val())
+
+		                   // message = '<div style="padding:15px;">'+$('#address').val()+'</div>'
+		                }
+		            }
+		            geocoder.coord2Address(coord.getLng(), coord.getLat(), callback);
+		        }
+
+
+		         message = '<div style="padding:15px;">'+lat+','+lng+'</div>'
+		        // message = '<div style="padding:15px;">'+latlng+'</div>'
+		        //message = '<div style="padding:15px;">'+$('#address').val()+'</div>'
+
+		        console.log(coords.getLat());
+				console.log(coords.getLng());
+
+
+
+
+                // 마커 생성 함수 사용
+                displayMarker(coords, message);
+
+		        // 지도의 중심을 결과값으로 받은 위치로 이동시킵니다
+		        map.setCenter(coords);
+
+		        // 경위도 좌표를 기상청 격자 좌표로 변환
+		        // var rs = dfs_xy_conv("toLL", coords.getLat(), coords.getLng());
+		        var rs = dfs_xy_conv("toXY", coords.getLat() , coords.getLng());
+				console.log(rs.x, rs.y);
+		    }
+		});
+	});
+
+	//-----------------------------------------------------------
+	// 엔터로 입력 기능 구현
+    $(document).ready(function() {
+        $("#address").keyup(function(event) {
+            if (event.which === 13) {
+                $("#searchBtn").click();
+            }
+        });
+    });
+
+
+
+	</script>
+</body>
+</html>

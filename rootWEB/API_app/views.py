@@ -24,3 +24,7 @@ def map2(request):
 def enter(request):
     print('====debug : client url ../enter, enter() call ~~, render - test_enter.html')
     return render(request, 'sample/test_enter.html')
+
+def coord_trans(request):
+    print('====debug : client url ../coord_trans, coord_trans() call ~~, render - coord_trans.html')
+    return render(request, 'sample/coord_trans.html')

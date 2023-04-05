@@ -8,5 +8,6 @@ urlpatterns = [
     path('map/', views.map),
     path('map2/', views.map2),
     path('test_enter/', views.enter),
+    path('coord_trans/', views.coord_trans),
 
 ]
