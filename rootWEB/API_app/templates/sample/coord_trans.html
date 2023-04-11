@@ -5,9 +5,17 @@
 <script src="http://code.jquery.com/jquery-latest.js"></script>
 <meta charset="UTF-8">
 <title>Insert title here</title>
+
+<!-- bootstrap css -->
+<link rel="stylesheet"
+	  href="${pageContext.request.contextPath}/resources/css/bootstrap.min.css">
+
 </head>
 <pre>[현재 위치 및 장소 검색]</pre>
 <body>
+
+
+
 		<table>
 			<tr>
 				<td>주소</td>
@@ -19,7 +27,9 @@
 		<p></p>
 		<div id="map" style="width:90%;height:450px;"></div>
 		<p></p>
-		<div id="result_coord"></div>
+		<div id="latlng_coord"></div>
+		<p></p>
+		<div id="XY_coord"></div>
 
 	<!-- kakao API -->
 	<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=e443c812207cc3e160a9117574e67b76&libraries=services,clusterer"></script>
@@ -39,6 +49,8 @@
 		var markers = [];
 		// 인포윈도우 전역변수
 		var infowindow;
+
+		var a = '주소 담을 변수';
 
 
 
@@ -84,7 +96,7 @@
 
 
         	// 인포윈도우를 마커위에 표시합니다
-        	infowindow.open(map, marker);
+        	// infowindow.open(map, marker);
 
 			let callback = function(result, status) {
 	        	        if (status === kakao.maps.services.Status.OK) {
@@ -96,7 +108,7 @@
 			// 지도 밑에 출력할 내용
 			// const address = document.getElementById('address').value;
 			// 현재 마커가 있는 곳의 경위도 좌표를 출력
-  			document.getElementById("result_coord").innerText = locPosition;
+  			document.getElementById("latlng_coord").innerText = locPosition;
 
         	// 지도 중심좌표를 접속위치로 변경합니다
         	map.setCenter(locPosition);
@@ -193,10 +205,12 @@
                 message = '<div style="padding:15px;">현재 위치</div>';
                 //message = '<div style="padding:15px;">'+locPosition+'</div>';
 
-
-
-
+			// 마커 표시
             displayMarker(locPosition, message);
+            // 기상청 격자 좌표 출력
+            var rs = dfs_xy_conv("toXY", locPosition.getLat() , locPosition.getLng());
+            var k = 'X: '+rs.x+', Y: '+rs.y
+			document.getElementById("XY_coord").innerText = k
         });
       } else{
 
@@ -217,6 +231,7 @@
         infowindow.close();
 
 
+
 		// 주소-좌표 변환 객체를 생성합니다
 		var geocoder = new kakao.maps.services.Geocoder();
 
@@ -235,23 +250,38 @@
 		        function getAddr(lat,lng){
 		            let geocoder = new kakao.maps.services.Geocoder();
 
+
 		            let coord = new kakao.maps.LatLng(lat, lng);
-		            let callback = function(result, status) {
+		            callback = function(result, status) {
 		                if (status === kakao.maps.services.Status.OK) {
 		                	// 추출한 도로명 주소를 해당 input의 value값으로 적용
 		                    $('#address').val(result[0].road_address.address_name);
-		                    console.log($('#address').val())
 
-		                   // message = '<div style="padding:15px;">'+$('#address').val()+'</div>'
+		                    a = result[0].road_address.address_name
+		                    // console.log($('#address').val())
+		                    console.log(a)
+		                    // console.log(result[0].road_address.address_name)
+
 		                }
+		                console.log(a)
 		            }
+
 		            geocoder.coord2Address(coord.getLng(), coord.getLat(), callback);
+
+
+
+		            console.log(a)
+
 		        }
 
+		        console.log(a)
 
-		         message = '<div style="padding:15px;">'+lat+','+lng+'</div>'
+
+		        // message = '<div style="padding:15px;">'+lat+','+lng+'</div>'
 		        // message = '<div style="padding:15px;">'+latlng+'</div>'
-		        //message = '<div style="padding:15px;">'+$('#address').val()+'</div>'
+		        message = '<div style="padding:15px;">'+$('#address').val()+'</div>'
+
+
 
 		        console.log(coords.getLat());
 				console.log(coords.getLng());
@@ -269,6 +299,8 @@
 		        // var rs = dfs_xy_conv("toLL", coords.getLat(), coords.getLng());
 		        var rs = dfs_xy_conv("toXY", coords.getLat() , coords.getLng());
 				console.log(rs.x, rs.y);
+				var k = 'X: '+rs.x+', Y: '+rs.y
+				document.getElementById("XY_coord").innerText = k
 		    }
 		});
 	});
